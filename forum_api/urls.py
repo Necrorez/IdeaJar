@@ -1,19 +1,19 @@
-from django.urls import path
+from django.urls import path,include
 from .views import *
+from rest_framework_nested import routers
+
+router = routers.SimpleRouter()
+router.register(r'categories', CategoryViewset,basename='categories')
+
+domains_router = routers.NestedSimpleRouter(router, r'categories', lookup='category')
+domains_router.register(r'posts', PostViewset, basename='posts')
 
 app_name = 'forum_api'
 
 urlpatterns = [
+    path(r'', include(router.urls)),
+    path(r'', include(domains_router.urls)),
     path('', apiOverview,name='api-overview'),
-    path('post-detail/<int:pk>/', PostDetails.as_view(),name='post-detail'),
-    path('post-list/', PostList.as_view(),name='post-list'),
-    path('post-create/', PostCreate.as_view(),name='post-create'),
-    path('post-delete/<int:pk>/', PostDelete.as_view(),name='post-delete'),
-    path('cat-detail/<int:pk>/', CategoryDetails.as_view(),name='category-detail'),
-    path('cat-list/', CategoryList.as_view(),name='category-list'),
-    path('cat-update/<int:pk>/', CategoryUpdate.as_view(),name='category-update'),
-    path('cat-create/', CategoryCreate.as_view(),name='category-create'),
-    path('cat-delete/<int:pk>/', CategoryDelete.as_view(),name='category-delete'),
     path('comment-detail/<int:pk>/', CommentDetails.as_view(),name='comment-detail'),
     path('comment-list/', CommentList.as_view(),name='comment-list'),
     path('comment-create/', CommentCreate.as_view(),name='comment-create'),

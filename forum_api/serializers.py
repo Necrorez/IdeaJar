@@ -16,6 +16,9 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = ('id','user','comment','comment_rep','post')
 
 class PostSerializer(serializers.ModelSerializer):
+    parent_lookup_kwargs = {
+        'category_pk': 'cat_pk',
+    }
     post_comment = CommentSerializer(many=True,read_only=True)
     class Meta:
         model = Post
