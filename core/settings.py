@@ -25,7 +25,6 @@ SECRET_KEY = os.environ['SECRET_KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True if os.environ['MODE'] == 'dev' else False
 
-ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -84,12 +83,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/3.2/ref/settings/#databases
-
-DATABASES = {
-    'default': dj_database_url.config(conn_max_age=600)
-}
+DATABASES = {'default': dj_database_url.config(default='sqlite://db/sqlite3.db')}
 
 
 # Password validation
