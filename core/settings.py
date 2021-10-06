@@ -103,6 +103,7 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+ALLOWED_HOSTS = [".herokuapp.com", ".researchthroughdesign.org","localhost"]
 
 
 # Internationalization
