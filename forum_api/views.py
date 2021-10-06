@@ -25,6 +25,7 @@ class CategoryViewset(viewsets.ViewSet):
         serializer = CategorySerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+        return Response(serializer.data)
 
     def update(self, request, pk):
         queryset = Category.objects.get(pk=pk)
