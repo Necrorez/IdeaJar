@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import NewUser as User
-from django.utils import timezone
+import datetime
 # Create your models here.
 
 class Category(models.Model):
@@ -15,7 +15,7 @@ class Post(models.Model):
     title = models.CharField(max_length=100)
     content = models.TextField(null=False)
     category = models.ForeignKey(Category,on_delete=models.PROTECT,default=1,related_name='post')
-    published = models.DateField(default=timezone.now)
+    published = models.DateField(auto_now_add=True)
     slug = models.SlugField(max_length=250,unique_for_date='published')
     objects = models.Manager()
 

@@ -7,30 +7,51 @@ from rest_framework.response import Response
 from rest_framework.generics import get_object_or_404
 from rest_framework import status
 from rest_framework.permissions import SAFE_METHODS,BasePermission,IsAdminUser, IsAuthenticated, AllowAny
-from rest_framework.decorators import authentication_classes
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.decorators import permission_classes
 
 # Create your views here.
 class PostPermissions(BasePermission):
     message = 'Editing posts is restricted to the author and admin only'
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        if request.user.is_authenticated:
+            return True
+        return False
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
         return obj.author == request.user or request.user.is_superuser
 
 class CommentReplyPermissions(BasePermission):
-    message = 'Editing posts is restricted to the author and admin only'
+    message = 'Editing comments is restricted to the author and admin only'
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        if request.user.is_authenticated:
+            return True
+        return False
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
         return obj.user == request.user or request.user.is_superuser
 
 class PrivateMessagePermissions(BasePermission):
+    def has_permission(self, request, view):
+        if request.user.is_authenticated:
+            return True
+        return False
     def has_object_permission(self, request, view, obj):
         return obj.sender == request.user or request.user.is_superuser or request.receiver == request.user
 
 class CategoryPermissions(BasePermission):
     message = 'Editing posts is restricted to admins only'
+    def has_permission(self, request, view):
+        if request.method == 'POST' and not request.user.is_staff:
+            return False
+        return True
+        
     def has_object_permission(self, request, view, obj):
         if request.method in SAFE_METHODS:
             return True
@@ -38,8 +59,8 @@ class CategoryPermissions(BasePermission):
 
 class CategoryViewset(viewsets.ViewSet,CategoryPermissions):
     serializer_class=CategorySerializer
-    permission_classes = [CategoryPermissions]
-    def list(self, request,):
+    permission_classes=[CategoryPermissions]
+    def list(self, request):
         queryset = Category.objects.filter()
         serializer = CategorySerializer(queryset, many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
@@ -49,7 +70,7 @@ class CategoryViewset(viewsets.ViewSet,CategoryPermissions):
         category = get_object_or_404(queryset, pk=pk)
         serializer = CategorySerializer(category)
         return Response(serializer.data,status=status.HTTP_200_OK)
-    
+
     def create(self, request):
         serializer = CategorySerializer(data=request.data)
         if serializer.is_valid():
@@ -76,7 +97,7 @@ class PostViewset(viewsets.ViewSet,PostPermissions):
     serializer_class = PostSerializer
     permission_classes = [PostPermissions]
     def list(self, request, category_pk=None):
-        queryset = Post.objects.filter(category_id=category_pk)
+        queryset = Post.objects.filter(category_id=category_pk).order_by('-id','-published')
         serializer = PostSerializer(queryset, many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
@@ -116,7 +137,7 @@ class CommentViewset(viewsets.ViewSet,CommentReplyPermissions):
 
     def retrieve(self, request, pk=None,category_pk=None,posts_pk=None):
         queryset = Comment.objects.filter()
-        data = get_object_or_404(queryset, pk=pk,post__category_id=category_pk,post_id=posts_pk)
+        data = get_object_or_404(queryset, pk=pk)
         serializer = CommentSerializer(data)
         return Response(serializer.data,status=status.HTTP_200_OK)
     
@@ -139,18 +160,13 @@ class CommentViewset(viewsets.ViewSet,CommentReplyPermissions):
         queryset.delete()
         return Response(status=status.HTTP_202_ACCEPTED)
 
-    def get_permissions(self):
-        if self.action in ['list','retrieve']:
-            permission_classes = [AllowAny]
-        else:
-            permission_classes = [IsAdminUser,IsAuthenticated]
-        return [permission() for permission in permission_classes]
+
 
 class ReplyViewset(viewsets.ViewSet,CommentReplyPermissions):
     serializer_class=ReplySerializer
     permission_classes = [CommentReplyPermissions]
     def list(self, request,category_pk=None,posts_pk=None,comments_pk=None):
-        queryset = Reply.objects.filter(comment_id=comments_pk,comment__post_id=posts_pk,comment__post__category_id=category_pk)
+        queryset = Reply.objects.filter(comment_id=comments_pk)
         serializer = ReplySerializer(queryset, many=True)
         return Response(serializer.data,status=status.HTTP_200_OK)
 
@@ -179,12 +195,7 @@ class ReplyViewset(viewsets.ViewSet,CommentReplyPermissions):
         queryset.delete()
         return Response(status=status.HTTP_202_ACCEPTED)
 
-    def get_permissions(self):
-        if self.action in ['list','retrieve']:
-            permission_classes = [AllowAny]
-        else:
-            permission_classes = [IsAdminUser,IsAuthenticated]
-        return [permission() for permission in permission_classes]
+
 
 class PersonalMessageViewset(viewsets.ViewSet,PrivateMessagePermissions):
     serializer_class = PersonalMessageSerializer
